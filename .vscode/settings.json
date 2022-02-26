@@ -1,5 +1,6 @@
 {
   "cSpell.words": [
     "sqlc"
-  ]
+  ],
+  "go.testEnvFile": "${workspaceFolder}/.env"
 }

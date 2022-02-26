@@ -21,8 +21,8 @@ func NewStore(db *sql.DB) *Store {
 }
 
 // ExecTx executes a function within a database transaction
-func (store *Store) execTx(ctx context.Context, fn func(*Queries) error) error {
-	tx, err := store.db.BeginTx(ctx, nil)
+func (s *Store) execTx(ctx context.Context, fn func(*Queries) error) error {
+	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
@@ -44,12 +44,12 @@ func (store *Store) execTx(ctx context.Context, fn func(*Queries) error) error {
 	return nil
 }
 
-func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (TransferTxResult, error) {
+// TransferTx performs a money transfer from one account to the other.
+// It creates the transfer, add account entries, and update accounts' balance within a database transaction
+func (s *Store) TransferTx(ctx context.Context, arg TransferTxParams) (TransferTxResult, error) {
 	var result TransferTxResult
 
-	fmt.Println("got here")
-	err := store.execTx(ctx, func(q *Queries) error {
-		fmt.Println("q>>>", q)
+	err := s.execTx(ctx, func(q *Queries) error {
 		var txErr error
 
 		result.Transfer, txErr = q.CreateTransfer(ctx, CreateTransferParams{
@@ -61,6 +61,23 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 			return txErr
 		}
 
+		result.FromEntry, txErr = q.CreateEntry(ctx, CreateEntryParams{
+			AccountID: arg.FromAccountID,
+			Amount:    -arg.Amount,
+		})
+		if txErr != nil {
+			return txErr
+		}
+
+		result.ToEntry, txErr = q.CreateEntry(ctx, CreateEntryParams{
+			AccountID: arg.ToAccountID,
+			Amount:    arg.Amount,
+		})
+		if txErr != nil {
+			return txErr
+		}
+
+		// TODO: update account balances
 		return txErr
 	})
 

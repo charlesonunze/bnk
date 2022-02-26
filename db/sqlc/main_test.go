@@ -10,20 +10,20 @@ import (
 )
 
 var (
-	dbDriver = os.Getenv("DB_DRIVER")
-	dbSource = os.Getenv("DB_URI")
+	dbDriver    = os.Getenv("DB_DRIVER")
+	dbSource    = os.Getenv("DB_URI")
+	testQueries *Queries
+	testDB      *sql.DB
 )
 
-var testQueries *Queries
-var testDB *sql.DB
-
 func TestMain(m *testing.M) {
-	testDB, err := sql.Open(dbDriver, dbSource)
+	conn, err := sql.Open(dbDriver, dbSource)
 	if err != nil {
 		log.Fatal("cannot connect to db:", err)
 	}
 
-	testQueries = New(testDB)
+	testDB = conn
+	testQueries = New(conn)
 
 	os.Exit(m.Run())
 }
