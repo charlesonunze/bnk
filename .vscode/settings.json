@@ -2,5 +2,6 @@
   "cSpell.words": [
     "sqlc"
   ],
-  "go.testEnvFile": "${workspaceFolder}/.env"
+  "go.testEnvFile": "${workspaceFolder}/.env",
+  "go.testTimeout": "600s"
 }
