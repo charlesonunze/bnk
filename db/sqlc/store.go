@@ -52,32 +52,44 @@ func (s *Store) TransferTx(ctx context.Context, arg TransferTxParams) (TransferT
 	err := s.execTx(ctx, func(q *Queries) error {
 		var txErr error
 
-		result.Transfer, txErr = q.CreateTransfer(ctx, CreateTransferParams{
+		if result.Transfer, txErr = q.CreateTransfer(ctx, CreateTransferParams{
 			FromAccountID: arg.FromAccountID,
 			ToAccountID:   arg.ToAccountID,
 			Amount:        arg.Amount,
-		})
-		if txErr != nil {
+		}); txErr != nil {
 			return txErr
 		}
 
-		result.FromEntry, txErr = q.CreateEntry(ctx, CreateEntryParams{
+		if result.FromEntry, txErr = q.CreateEntry(ctx, CreateEntryParams{
 			AccountID: arg.FromAccountID,
 			Amount:    -arg.Amount,
-		})
-		if txErr != nil {
+		}); txErr != nil {
 			return txErr
 		}
 
-		result.ToEntry, txErr = q.CreateEntry(ctx, CreateEntryParams{
+		if result.ToEntry, txErr = q.CreateEntry(ctx, CreateEntryParams{
 			AccountID: arg.ToAccountID,
 			Amount:    arg.Amount,
+		}); txErr != nil {
+			return txErr
+		}
+
+		result.FromAccount, txErr = q.AddAccountBalance(ctx, AddAccountBalanceParams{
+			ID:     arg.FromAccountID,
+			Amount: -arg.Amount,
 		})
 		if txErr != nil {
 			return txErr
 		}
 
-		// TODO: update account balances
+		result.ToAccount, txErr = q.AddAccountBalance(ctx, AddAccountBalanceParams{
+			ID:     arg.ToAccountID,
+			Amount: arg.Amount,
+		})
+		if txErr != nil {
+			return txErr
+		}
+
 		return txErr
 	})
 
